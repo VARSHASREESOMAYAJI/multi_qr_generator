@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi QR Code Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Multi QR Code Generator</h1>
+            <p>Generate QR codes for URLs, text, files, and more.</p>
+        </header>
+        
+        <div class="qr-generator">
+            <div class="tabs">
+                <button class="tab-button active" data-tab="url">URL</button>
+                <button class="tab-button" data-tab="phone">Phone</button>
+                <button class="tab-button" data-tab="sms">SMS</button>
+                <button class="tab-button" data-tab="email">Email</button>
+                <button class="tab-button" data-tab="text">Text</button>
+                <button class="tab-button" data-tab="pdf">PDF</button>
+                <button class="tab-button" data-tab="image">Image</button>
+            </div>
+
+            <form id="qr-form" method="POST" action="/" enctype="multipart/form-data">
+                <input type="hidden" name="qr_type" id="qr_type_input" value="url">
+
+                <div id="url" class="tab-content active">
+                    <label for="url_data">Enter URL</label>
+                    <input type="url" name="url_data" id="url_data" placeholder="https://example.com" required>
+                </div>
+
+                <div id="phone" class="tab-content">
+                    <label for="phone_data">Enter Phone Number</label>
+                    <input type="tel" name="phone_data" id="phone_data" placeholder="9876543210">
+                </div>
+                
+                <div id="sms" class="tab-content">
+                    <label for="sms_phone">Recipient Phone Number</label>
+                    <input type="tel" name="sms_phone" id="sms_phone" placeholder="9876543210">
+                    <label for="sms_message">Message</label>
+                    <textarea name="sms_message" id="sms_message" rows="3" placeholder="Your SMS message here..."></textarea>
+                </div>
+                
+                <div id="email" class="tab-content">
+                    <label for="email_to">To</label>
+                    <input type="email" name="email_to" id="email_to" placeholder="recipient@example.com">
+                    <label for="email_subject">Subject</label>
+                    <input type="text" name="email_subject" id="email_subject" placeholder="Email Subject">
+                    <label for="email_body">Body</label>
+                    <textarea name="email_body" id="email_body" rows="3" placeholder="Your email body here..."></textarea>
+                </div>
+                
+                <div id="text" class="tab-content">
+                    <label for="text_data">Enter Plain Text</label>
+                    <textarea name="text_data" id="text_data" rows="4" placeholder="Enter any text..."></textarea>
+                </div>
+                
+                <div id="pdf" class="tab-content">
+                    <label for="pdf_file">Upload PDF File</label>
+                    <p class="note">Note: For small files only (max 2MB). The file content will be encoded.</p>
+                    <input type="file" name="pdf_file" id="pdf_file" accept=".pdf">
+                </div>
+
+                <div id="image" class="tab-content">
+                    <label for="image_file">Upload Image File</label>
+                    <p class="note">Note: For small files only (max 2MB). The file content will be encoded.</p>
+                    <input type="file" name="image_file" id="image_file" accept="image/*">
+                </div>
+
+                <button type="submit" class="submit-btn">Generate QR Code</button>
+            </form>
+
+            {% if qr_image %}
+            <div class="qr-display">
+            <h3>QR Code:</h3>
+            <img src="{{ qr_image }}" alt="Generated QR Code" id="qr-preview">
+            <a href="{{ qr_image }}" download="qrcode.png" class="download-btn">Download QR Code</a>
+            </div>
+            {% endif %}
+
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="error-message">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tabsContainer = document.querySelector('.tabs');
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const qrTypeInput = document.getElementById('qr_type_input');
+            const form = document.getElementById('qr-form');
+
+            tabsContainer.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const targetTab = e.target.dataset.tab;
+
+                    // Update active button
+                    tabButtons.forEach(button => button.classList.remove('active'));
+                    e.target.classList.add('active');
+
+                    // Update active content
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === targetTab) {
+                            content.classList.add('active');
+                        }
+                    });
+
+                    // Update hidden input value
+                    qrTypeInput.value = targetTab;
+
+                    // Update required attribute for inputs
+                    updateRequiredAttributes(targetTab);
+                }
+            });
+            
+            function updateRequiredAttributes(activeTab) {
+                // Remove 'required' from all inputs first
+                form.querySelectorAll('input, textarea').forEach(input => {
+                    if(input.type !== 'hidden') {
+                       input.required = false;
+                    }
+                });
+                
+                // Add 'required' to the primary input of the active tab
+                const activeContent = document.getElementById(activeTab);
+                const firstInput = activeContent.querySelector('input, textarea');
+                if(firstInput) {
+                    firstInput.required = true;
+                }
+            }
+            
+            // Initialize required attributes on page load
+            updateRequiredAttributes('url');
+        });
+    </script>
+</body>
+</html>
